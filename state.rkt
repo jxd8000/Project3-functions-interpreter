@@ -10,6 +10,8 @@
 
 (provide
  empty-state
+ push-layer
+ pop-layer
  state-has?
  state-lookup
  state-declare
@@ -22,7 +24,21 @@
 ; _ -> state
 (define empty-state
   (lambda ()
-    '()))
+    (list '())))
+
+; add a new empty top layer
+; state -> state
+(define push-layer
+  (lambda (st)
+    (cons '() st)))
+
+; remove top layer
+; state -> state
+(define pop-layer
+  (lambda (st)
+    (if (null? st)
+        (error "Cannot pop from empty state")
+        (rest st))))
 
 ; check whether variable has been declared in state
 ; symbol state -> boolean

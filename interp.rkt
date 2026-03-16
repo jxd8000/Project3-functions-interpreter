@@ -2,7 +2,7 @@
 
 ;;;; ***************************************************
 ;;;; Jianhao Deng
-;;;; Darion Gomez
+;;;; Darion Achilles Gomez
 ;;;; Chloe de Lamare
 ;;;; CSDS 345 Spring 2026
 ;;;; Project 1

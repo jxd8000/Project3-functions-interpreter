@@ -77,14 +77,14 @@
 ; symbol state -> state
 (define state-declare
   (lambda (var st)
-    (if (state-has? var st) (error (format "Variable already declared: ~a" var))
+    (if (top-layer-has? var st) (error (format "Variable already declared: ~a" var))
         (cons (cons (list var 'UNINITIALIZED) (first st)) (rest st)))))
 
 ; declare a new variable and initialize it with a value
 ; symbol value state -> state
 (define state-declare/init
   (lambda (var val st)
-    (if (state-has? var st)
+    (if (top-layer-has? var st)
         (error (format "Variable already declared: ~a" var))
         (cons (cons (list var val) (first st)) (rest st)))))
 
@@ -127,7 +127,9 @@
 
 
 
-
+(define top-layer-has?
+  (lambda (var st)
+    (layer-has? var (first st))))
 
 
 

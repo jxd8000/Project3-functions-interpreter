@@ -12,13 +12,13 @@
 (require "eval.rkt")
 (require "simpleParser.rkt")
 
-(provide interpret M_statementlist M_statement)
+(provide interpret M_statementlist-cps M_statement)
 
 ;interpret
 (define interpret
   (lambda (filename)
     (let* ((ast (parser filename))
-           (final-state (M_statementlist ast (empty-state))))
+           (final-state (M_statementlist-cps ast (empty-state))))
       (state-get-return final-state))))
 
 ; abstractions for M_statementlist
@@ -36,16 +36,6 @@
       ((empty? statementlist) (return state)) ; If the statementlist is empty, then no changes to state occur
       (else (M_statementlist-cps (statementlistof statementlist)
                              (M_statement (statementof statementlist) state) return break continue throw)))))
-
-; M_statementlist for easier calling
-(define M_statementlist
-  (lambda (statementlist state)
-    (M_statementlist-cps statementlist state
-                         (lambda (s) (M_statementlist-cps statementlist s next return break continue throw))      ;next - should just execute next statement in statementlist
-                         (lambda (s) s)     ;return - simply return the state resulting from executing that statementlist
-                         (lambda (v) v)     ;break - should this be an error
-                         (lambda (v) v)     ;continue - should this be an error
-                         (lambda (v) v))))  ;throw - should this be an error
 
 ; abstractions for M_statement
 (define keyword car)

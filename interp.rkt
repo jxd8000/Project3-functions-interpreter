@@ -18,8 +18,20 @@
 (define interpret
   (lambda (filename)
     (let* ((ast (parser filename))
-           (final-state (M_statementlist-cps ast (empty-state))))
+           (final-state (M_statementlist-cps ast (empty-state) (lambda (v) v)))) ; 
       (state-get-return final-state))))
+
+;abstractions for M_blockofcode
+(define beginningof car)
+(define bodyof cdr)
+
+; M_blockofcode
+(define M_blockofcode
+  (lambda (block state next return break continue throw)
+    (cond
+      ((empty? block) (return state))
+      ((eq? 'begin (beginningof block)) (M_statementlist-cps (bodyof block) state next return break continue throw)))))
+      
 
 ; abstractions for M_statementlist
 (define empty? null?)
@@ -79,7 +91,7 @@
     (interpret "sample_programs/t15prof.txt")(state-update name (M_expression expression state) state)))
 
 (define M_return ; instead of using state-set-return use return continuation
-  (lambda (expression state state next return break continue throw)
+  (lambda (expression state next return break continue throw)
     (state-set-return
      (convert-bool (M_expression expression state)) state)))
 

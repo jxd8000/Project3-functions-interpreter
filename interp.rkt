@@ -30,7 +30,8 @@
   (lambda (block state next return break continue throw)
     (cond
       ((empty? block) (return state))
-      ((eq? 'begin (beginningof block)) (M_statementlist-cps (bodyof block) next return break continue throw)))))
+      ((eq? 'begin (beginningof block)) (push-layer (M_statementlist-cps (bodyof block) next return break continue throw)))
+      (else (M_statementlist-cps block state next return break continue throw))))) ; if it is not a block it is just a list of statements, no layer necessary
 
       
 

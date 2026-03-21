@@ -33,8 +33,6 @@
       ((eq? 'begin (beginningof block)) (push-layer (M_statementlist-cps (bodyof block) next return break continue throw)))
       (else (M_statementlist-cps block state next return break continue throw))))) ; if it is not a block it is just a list of statements, no layer necessary
 
-      
-
 ; abstractions for M_statementlist
 (define empty? null?)
 (define statementof car)
@@ -48,6 +46,7 @@
   (lambda (statementlist state next return break continue throw)
     (cond
       ((empty? statementlist) (return state)) ; If the statementlist is empty, then no changes to state occur
+      ((eq? 'begin (statementof statementlist)) (M_blockofcode statementlist next return break continue throw)) ; a list of statements may have a block of code within it
       (else (M_statementlist-cps (statementlistof statementlist)
                              (M_statement (statementof statementlist) state) return break continue throw)))))
 

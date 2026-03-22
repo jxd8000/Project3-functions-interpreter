@@ -164,6 +164,27 @@
     (continue state)))
 
 
+<<<<<<< Updated upstream
+=======
+(define M_throw
+  (lambda (statement state next return break continue throw)
+    (throw (M_expression (cadr statement) state) state)))
+
+;; <try> ::= try { <statementlist> } catch ( <var> ) { <statementlist> } finally { <statementlist> } |
+;;           try { <statement list > } catch ( <var> ) { <statementlist> } |
+;;           try { <statementlist> } finally { <statementlist> }
+;; (try body (catch (e) body) (finally body))
+;; (try body (catch (e) body))
+;; (try body (finally body))
+
+(define M_try
+  (lambda (statement state next return break continue throw)
+    
+
+    
+    
+      
+>>>>>>> Stashed changes
 ; continuation is used to jump in the code, next jump to next line of code, for each statement type where do I need to jump to
 ; where is this code supposed to do
 ; where in the interpreter is the final output done?

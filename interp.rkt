@@ -10,7 +10,7 @@
 
 (require "state.rkt")
 (require "eval.rkt")
-(require "simpleParser.rkt")
+(require "functionParser.rkt")
 
 (provide interpret M_statementlist-cps M_statement)
 
@@ -96,6 +96,8 @@
       ((eq? (keyword statement) 'continue) (M_continue state next return break continue throw))
       ((eq? (keyword statement) 'throw) (M_throw statement state next return break continue throw))
       ((eq? (keyword statement) 'try)   (M_try   statement state next return break continue throw))
+      ((eq? (keyword statement) 'funcall) (M_funcall-statement statement state next return break continue throw))
+      ((eq? (keyword statement) 'function) (M_function-placeholder statement state next return break continue throw))
       (else (error 'badop "Invalid statement form: ~s" statement)))))
 
 
@@ -109,15 +111,24 @@
 ; returns a new state for the new variable declared
 (define M_declare2
   (lambda (name expression state next return break continue throw)
-    (next (state-declare/init name (M_expression expression state) state))))
+    (let* ([rhs-vs (M_expression-vs expression state)]
+           [rhs-val (vs-value rhs-vs)]
+           [rhs-state (vs-state rhs-vs)])
+      (next (state-declare/init name rhs-val rhs-state)))))
 
 (define M_assign
   (lambda (name expression state next return break continue throw)
-    (next (state-update name (M_expression expression state) state))))
+    (let* ([rhs-vs (M_expression-vs expression state)]
+           [rhs-val (vs-value rhs-vs)]
+           [rhs-state (vs-state rhs-vs)])
+      (next (state-update name rhs-val rhs-state)))))
 
 (define M_return 
   (lambda (expression state next return break continue throw)
-    (return (convert-bool (M_expression expression state)) state)))
+    (let* ([ans-vs (M_expression-vs expression state)]
+           [ans-val (vs-value ans-vs)]
+           [ans-state (vs-state ans-vs)])
+      (return (convert-bool ans-val) ans-state))))
 
 (define convert-bool
   (lambda (v)
@@ -129,28 +140,36 @@
   (lambda (statement state next return break continue throw)
     (let* ([cond-expr (cadr statement)]
            [then-stmt (caddr statement)]
-           [has-else? (>= (length statement) 4)])
-      (if (M_boolean cond-expr state)
-          (M_statement then-stmt state next return break continue throw)
+           [has-else? (>= (length statement) 4)]
+           [cond-vs (M_boolean-vs cond-expr state)]
+           [cond-val (vs-value cond-vs)]
+           [cond-state (vs-state cond-vs)])
+      (if cond-val
+          (M_statement then-stmt cond-state next return break continue throw)
           (if has-else?
-              (M_statement (cadddr statement) state next return break continue throw)
-              (next state))))))
+              (M_statement (cadddr statement) cond-state next return break continue throw)
+              (next cond-state))))))
 
 (define M_while
   (lambda (statement state next return break continue throw)
     (let ([cond-expr (cadr statement)]
           [body-stmt (caddr statement)])
       (let loop ([st state])
-        (if (M_boolean cond-expr st)
-            (M_statement body-stmt
-                         st (lambda (new-state)
-                              (loop new-state))
-                         return (lambda (break-state)
-                                  (next break-state))
-                         (lambda (continue-state)
-                           (loop continue-state))
-                         throw)
-                         (next st))))))
+        (let* ([cond-vs (M_boolean-vs cond-expr st)]
+               [cond-val (vs-value cond-vs)]
+               [cond-state (vs-state cond-vs)])
+          (if cond-val
+              (M_statement body-stmt
+                           cond-state
+                           (lambda (new-state)
+                             (loop new-state))
+                           return
+                           (lambda (break-state)
+                             (next break-state))
+                           (lambda (continue-state)
+                             (loop continue-state))
+                           throw)
+              (next cond-state)))))))
 
 
 (define M_break
@@ -163,7 +182,21 @@
 
 (define M_throw
   (lambda (statement state next return break continue throw)
-    (throw (M_expression (cadr statement) state) state)))
+    (let* ([ans-vs (M_expression-vs (cadr statement) state)]
+           [ans-val (vs-value ans-vs)]
+           [ans-state (vs-state ans-vs)])
+      (throw ans-val ans-state))))
+
+(define M_funcall-statement
+  (lambda (statement state next return break continue throw)
+    (let ([ans-vs (M_expression-vs statement state)])
+      (next (vs-state ans-vs)))))
+
+(define M_function-placeholder
+  (lambda (statement state next return break continue throw)
+    (error 'M_function
+           "Function definition handling will be integrated with Member 1/2: ~s"
+           statement)))
 
 ;; abstractions for try/catch/finally
 (define catch-block second)

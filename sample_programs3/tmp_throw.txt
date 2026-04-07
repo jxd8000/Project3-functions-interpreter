@@ -1,0 +1,9 @@
+function main() {
+  var x = 0;
+  try {
+    throw (x = 9);
+  }
+  catch (e) {
+    return x;
+  }
+}

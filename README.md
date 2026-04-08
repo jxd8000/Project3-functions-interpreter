@@ -1,4 +1,6 @@
-# Project 1: Simple Language Interpreter (Racket)
+# Project 3
+
+# Before your start, please check the NOTE.txt
 
 ## Folder layout
 - simpleParser.rkt / lex.rkt: professor provided parser + lexer

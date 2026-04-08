@@ -1,5 +1,5 @@
 #lang racket
-(require "simpleParser.rkt")
+(require "functionParser.rkt")
 
 ; An interpreter for a simple language that does if, while and assign.
 ; The language has code blocks and supports the unstructured flow control constructs: break and continue in a loop, and throwing an exception
@@ -263,6 +263,16 @@
 ; State Functions: A state is a list of names followed by a list of the values bound to each associated name
 ;   The state is organized in "frames" corresponding to scope levels.
 ;------------------------
+
+(define front car)
+
+; creates the outer layer composed of just variable and function declarations
+(define outer-layer
+  (lambda (statement-list emptystate) ; 
+    (cond
+      (()()) ; global declaration
+      (()()) ; function definition
+      (else ); neither so we must call main
 
 ; create a new empty state
 (define newstate

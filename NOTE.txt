@@ -1,0 +1,72 @@
+Member 3 Handoff Notes
+
+What I have finished:
+1. eval.rkt now uses value + state propagation.
+   - M_expression-vs : expr state -> (value . state)
+   - M_boolean-vs    : expr state -> (value . state)
+   - M_value-vs      : expr state -> (value . state)
+
+2. Assignment expressions now work inside larger expressions.
+   Examples:
+   - (= x 5)
+   - (+ (= x 5) x)
+
+3. interp.rkt has already been updated to use the new protocol in:
+   - M_declare2
+   - M_assign
+   - M_return
+   - M_if
+   - M_while
+   - M_throw
+   - M_funcall-statement
+
+4. Current tested behavior:
+   - normal arithmetic / comparison / boolean expressions still work
+   - side effects inside expressions are preserved
+   - left-to-right evaluation correctly passes updated state forward
+
+Important requirements for Member 1 / Member 2:
+1. The real function-call implementation must be compatible with this protocol.
+   - M_funcall-expression must return:
+     (value . state)
+   - It must not return only a value.
+
+2. For function calls used as standalone statements:
+   - M_funcall-statement discards the return value
+   - but it must keep the updated state
+   - so any side effects on global / outer variables must be reflected in the returned state
+
+3. Please do not change the expression protocol back to value-only.
+   - Do not change M_expression-vs / M_boolean-vs / M_value-vs back to returning only a value.
+   - Do not skip state propagation in funcall handling.
+
+What I still need from you:
+1. The exact closure representation
+   Example:
+   - (closure params body env)
+   or whatever structure you decide to use
+
+2. The final function-call interface
+   - who will implement M_funcall-expression
+   - whether extra helpers will be added
+   - exact input/output format
+
+Current placeholders:
+1. In interp.rkt:
+   - M_function-placeholder
+   This should be replaced by the real function definition / registration logic.
+
+2. In eval.rkt:
+   - M_funcall-expression
+   This should be replaced by the real function-call execution logic.
+
+Priority integration tests later:
+1. function call inside an expression
+2. function call as a statement
+3. function call as an argument
+4. function call with side effects on global / outer variables
+5. nested functions / closures / lexical scope
+
+Summary:
+I have finished the expression/state-flow integration for Member 3.
+When you connect function definition, closure, and funcall logic, please keep the rule that function calls must return (value . state), otherwise side-effect propagation in Part 3 will break.

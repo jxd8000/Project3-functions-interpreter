@@ -50,6 +50,20 @@
       ((eq? (statement-type statement) 'throw)    (throw (M-value (get-expression statement) state) state))
       (else (myerror "Unknown statement:" (statement-type statement))))))
 
+; Alternate M-state-statement that only reads global variables and functions definitions
+(define Outer-M-state-statement
+  (lambda (statement state next return break continue throw)
+    (cond
+      ((eq? (statement-type statement) 'var) (if (exists-declare-value? statement)
+                                                    (M-state-declare-and-assign (get-declare-var statement) (get-declare-value statement) state next return break continue throw)
+                                                    (M-state-declare (get-declare-var statement) state next return break continue throw)))
+      ((eq?(statement-type statement) 'function) ()))))
+
+(define create-closure
+  (lambda (formal-parameters function-body scoping-function input)
+    (cons formal-parameters (cons function-body (scoping-function input)))))
+      
+
 ; Intepret a return statement by immediately returning using a global return continuation
 (define M-state-return
   (lambda (expression state next return break continue throw)
@@ -258,22 +272,22 @@
 (define catch-body operand2)
 (define finally-body operand1)
 
-
 ;------------------------
 ; State Functions: A state is a list of names followed by a list of the values bound to each associated name
 ;   The state is organized in "frames" corresponding to scope levels.
 ;------------------------
 
-(define front car)
-
 ; creates the outer layer composed of just variable and function declarations
+; its a version of m-state-statementlist but can only detect assigns and function definitions
+; need a alternate m-state-statement that only detects assing and function definitions
 (define outer-layer
-  (lambda (statement-list emptystate) ; 
-    (cond
-      (()()) ; global declaration
-      (()()) ; function definition
-      (else ); neither so we must call main
-
+  (lambda (statement-list emptystate next return break continue throw)
+    (if (empty? statement-list)
+        (next state)
+        (Outer-M-state-statement (firststatement statement-list) state
+                           (lambda (s) (M-state-statement-list (restofstatements statement-list) s next return break continue throw))
+                           return break continue throw))))
+    
 ; create a new empty state
 (define newstate
   (lambda ()

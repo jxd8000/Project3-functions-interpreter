@@ -44,6 +44,7 @@
                                                     (if (empty? (get-catch statement))
                                                         (M-state-try-finally (get-try-body statement) (finally-body (get-finally statement)) state next return break continue throw)
                                                         (M-state-try-catch-finally (get-try-body statement) (catch-var (get-catch statement)) (catch-body (get-catch statement)) (finally-body (get-finally statement)) state next return break continue throw))))
+      ((eq? (statement-type statement) 'function) ('placeholder))
       ; The flow control "goto" statements:
       ((eq? (statement-type statement) 'continue) (continue state))
       ((eq? (statement-type statement) 'break)    (break state))
@@ -57,11 +58,15 @@
       ((eq? (statement-type statement) 'var) (if (exists-declare-value? statement)
                                                     (M-state-declare-and-assign (get-declare-var statement) (get-declare-value statement) state next return break continue throw)
                                                     (M-state-declare (get-declare-var statement) state next return break continue throw)))
-      ((eq?(statement-type statement) 'function) ()))))
+      ((eq?(statement-type statement) 'function) (add-binding (name-of-function statement) (create-closure (formal-parameters-of statement) (body-of-function statement) state) state)))))
 
+; what do I actually want to return there, the (( before add binding means I want to run whatever comes after as a function but add-binding just returns a list
+
+; Creates the closure for a function
+; The portion in scope for global function is simply the base state we've been building since we called Outer-M-state-statement-list
 (define create-closure
-  (lambda (formal-parameters function-body scoping-function input)
-    (cons formal-parameters (cons function-body (scoping-function input)))))
+  (lambda (formal-parameters function-body portion-in-scope)
+    (cons formal-parameters (cons function-body portion-in-scope))))
       
 
 ; Intepret a return statement by immediately returning using a global return continuation
@@ -272,20 +277,24 @@
 (define catch-body operand2)
 (define finally-body operand1)
 
+;these helper functions define parts of functions
+(define name-of-function cadr)
+(define formal-parameters-of caddr)
+(define body-of-function cadddr)
+
 ;------------------------
 ; State Functions: A state is a list of names followed by a list of the values bound to each associated name
 ;   The state is organized in "frames" corresponding to scope levels.
 ;------------------------
 
 ; creates the outer layer composed of just variable and function declarations
-; its a version of m-state-statementlist but can only detect assigns and function definitions
-; need a alternate m-state-statement that only detects assing and function definitions
-(define outer-layer
-  (lambda (statement-list emptystate next return break continue throw)
+; its a duplicate of m-state-statement-list except using Outer-M-statement
+(define Outer-M-state-statement-list
+  (lambda (statement-list state next return break continue throw)
     (if (empty? statement-list)
         (next state)
         (Outer-M-state-statement (firststatement statement-list) state
-                           (lambda (s) (M-state-statement-list (restofstatements statement-list) s next return break continue throw))
+                           (lambda (s) (Outer-M-state-statement-list (restofstatements statement-list) s next return break continue throw))
                            return break continue throw))))
     
 ; create a new empty state

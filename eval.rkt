@@ -20,7 +20,10 @@
  M_value-vs
  make-vs
  vs-value
- vs-state)
+ vs-state
+ register-funcall-handler!
+ get-current-throw-handler
+ set-current-throw-handler!)
 
 ;; Helper Functions -----------------------------------------------------------------------
 
@@ -77,6 +80,9 @@
           (error 'badop "Unassigned variable: ~s" exp)
           v))))
 
+(define get-current-throw-handler
+  (lambda ()
+    current-throw-handler))
 
 (define lang-bool->racket
   (lambda (v)
@@ -290,8 +296,25 @@
 
 ;; Placeholder only.
 ;; Member 2 / later integration will replace this with real function-call execution.
-(define M_funcall-expression
+
+(define current-throw-handler
+  (lambda (val st)
+    (error 'throw "No throw handler registered for expression context: ~a" val)))
+
+(define set-current-throw-handler!
+  (lambda (handler)
+    (set! current-throw-handler handler)))
+
+(define current-funcall-handler
   (lambda (expression st)
     (error 'M_funcall-expression
-           "funcall not integrated yet: ~s"
+           "funcall handler not registered yet: ~s"
            expression)))
+
+(define register-funcall-handler!
+  (lambda (handler)
+    (set! current-funcall-handler handler)))
+
+(define M_funcall-expression
+  (lambda (expression st)
+    (current-funcall-handler expression st)))

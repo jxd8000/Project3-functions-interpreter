@@ -231,6 +231,11 @@
         (eq? val1 val2))))
 
 
+; funcall
+(define M-value-funcall
+  (lambda (statement state return
+
+
 ;-----------------
 ; HELPER FUNCTIONS
 ;-----------------

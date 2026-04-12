@@ -231,10 +231,89 @@
         (eq? val1 val2))))
 
 
-; funcall
-(define M-value-funcall
-  (lambda (statement state return
+;-----------------
+; FUNCTION CALL
+;-----------------
 
+; abstractions to access closure
+(define closure-params car)
+(define closure-body cadr)
+(define closure-env cddr)
+
+; abstractions for function calls
+(define funcall-name cadr)
+(define funcall-args cddr)
+
+(define bind-params
+  (lambda (formals actuals call-state func-state)
+    (cond
+      ((and (null? formals) (null? actuals)) func-state)
+      ((null? formals) (myerror "error: too many arguments provided to function"))
+      ((null? actuals) (myerror "error: too few arguments provided to function"))
+      (else
+       (bind-params
+        (cdr formals)
+        (cdr actuals)
+        call-state
+        (add-binding (car formals)
+                     (M-value (car actuals) call-state)
+                     func-state))))))
+
+(define restore-state
+  (lambda (caller-state final-state)
+    (if (null? caller-state)
+        '()
+        (cons (restore-frame (car caller-state) final-state)
+              (restore-state (cdr caller-state) final-state)))))
+
+(define restore-frame
+  (lambda (frame final-state)
+    (list (variables frame)
+          (restore-values (variables frame)
+                          (values-store frame)
+                          final-state))))
+
+(define restore-values
+  (lambda (vars vals final-state)
+    (cond
+      ((null? vars) '())
+      (else
+       (cons (if (exists-in-state? (car vars) final-state)
+                 (let ((new-val (lookup-binding (car vars) final-state)))
+                   (scheme->language new-val))
+                 (car vals))
+             (restore-values (cdr vars) (cdr vals) final-state))))))
+
+(define M-value-funcall
+  (lambda (statement call-state return throw)
+    (let* ((closure (lookup-binding (funcall-name statement) call-state))
+           (fstate1 (closure-env closure))
+           (fstate2 (push-frame fstate1))
+           (fstate3 (bind-params (closure-params closure)
+                                 (funcall-args statement)
+                                 call-state
+                                 fstate2)))
+      (M-state-statement-list
+       (closure-body closure)
+       fstate3
+       (lambda (s)
+         (myerror "error: no return statement"))
+       (lambda (v s)
+         (return v (restore-state call-state s)))
+       (lambda (s)
+         (myerror "error: break outside of loop"))
+       (lambda (s)
+         (myerror "error: continue outside of loop"))
+       (lambda (v s)
+         (throw v (restore-state call-state s)))))))
+
+(define M-state-funcall
+  (lambda (statement state next return break continue throw)
+    (M-value-funcall
+     statement
+     state
+     (lambda (v updated-state) (next updated-state))
+     throw)))
 
 ;-----------------
 ; HELPER FUNCTIONS

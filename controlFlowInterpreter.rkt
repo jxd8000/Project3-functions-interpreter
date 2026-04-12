@@ -9,8 +9,15 @@
 (define interpret
   (lambda (file)
     (scheme->language
-     (M-state-statement-list (parser file) (newstate)
-                             (lambda (s) s)    ; the "run next line of program" continuation
+     (Outer-M-state-statement-list (parser file) (newstate)
+                             (lambda (state) (M-state-funcall
+                                              (lookup-binding 'main state)
+                                              state
+                                              (lambda (v) v)
+                                              (lambda (v s) v)
+                                              (lambda (s) (myerror "Break used outside of loop"))
+                                              (lambda (s) (myerror "Continue used outside of loop"))
+                                              (lambda (e s) (myerror "Uncaught exception thrown"))))
                              (lambda (v s) v)  ; the "return statement" continuation
                              (lambda (s) (myerror "Break used outside of loop"))
                              (lambda (s) (myerror "Continue used outside of loop"))

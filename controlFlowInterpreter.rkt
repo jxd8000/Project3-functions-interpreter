@@ -44,7 +44,12 @@
                                                     (if (empty? (get-catch statement))
                                                         (M-state-try-finally (get-try-body statement) (finally-body (get-finally statement)) state next return break continue throw)
                                                         (M-state-try-catch-finally (get-try-body statement) (catch-var (get-catch statement)) (catch-body (get-catch statement)) (finally-body (get-finally statement)) state next return break continue throw))))
-      ((eq? (statement-type statement) 'function) ('placeholder))
+      ;; for nested functions
+      ((eq? (statement-type statement) 'function) (next (add-binding (name-of-function statement)
+                                                                     (create-closure (formal-parameters-of statement) (body-of-function statement) state)
+                                                                     state)))
+      ;; for regular function calls
+      ((eq? (statement-type statement) 'funcall) (M-state-funcall statement state next return break continue throw))
       ; The flow control "goto" statements:
       ((eq? (statement-type statement) 'continue) (continue state))
       ((eq? (statement-type statement) 'break)    (break state))
@@ -58,7 +63,7 @@
       ((eq? (statement-type statement) 'var) (if (exists-declare-value? statement)
                                                     (M-state-declare-and-assign (get-declare-var statement) (get-declare-value statement) state next return break continue throw)
                                                     (M-state-declare (get-declare-var statement) state next return break continue throw)))
-      ((eq?(statement-type statement) 'function) (add-binding (name-of-function statement) (create-closure (formal-parameters-of statement) (body-of-function statement) state) state)))))
+      ((eq?(statement-type statement) 'function) (next (add-binding (name-of-function statement) (create-closure (formal-parameters-of statement) (body-of-function statement) state) state))))))
 
 ; what do I actually want to return there, the (( before add binding means I want to run whatever comes after as a function but add-binding just returns a list
 
